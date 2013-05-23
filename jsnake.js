@@ -22,6 +22,9 @@ $(function() {
 				     this.DOWN, this.UP];
 	    
 	    this._direction = this.RIGHT;
+	    
+	    this._snake = [{x: this._x, y: this._y,
+			    direction: this._direction}];
 
 	    if (ctx) {
 		this.element.css("border", "1px solid black");
@@ -65,10 +68,14 @@ $(function() {
 		return false;
 	    return true;
 	},
+	
+	_grow_counter: 0,
+
+	_snake_should_grow: function () {
+	    return this._grow_counter++ % 3;
+	},
 
 	_move_snake: function () {
-	    this._clear_square(this._x, this._y);
-
 	    switch (this._direction) {
 		case this.LEFT:
 		this._x--;
@@ -83,6 +90,14 @@ $(function() {
 		this._y++;
 		break;
 	    }
+
+	    if (!this._snake_should_grow()) {
+		var last = this._snake.pop();
+		this._clear_square(last.x, last.y);
+	    }
+
+	    this._snake.unshift({x: this._x, y: this._y,
+				 direction: this._direction})
 	    if (this._snake_still_legal()) {	
 		this._draw_square(this._x, this._y);
 		return false;
