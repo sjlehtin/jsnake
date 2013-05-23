@@ -113,13 +113,8 @@ $(function() {
 	},
 
 	_occupied_by_snake: function (x, y) {
-	    // XXX better idea would be to check the color of the map.
-	    for (var ii = 0; ii < this._snake.length; ii++) {
-		var joint = this._snake[ii];
-		if (joint.x == x && joint.y == y)
-		    return true;
-	    }
-	    return false;
+	    return this._color_equal(this._get_square_color(x, y),
+				     this.options.snake_color);
 	},
 
 	_snake_still_legal: function () {
