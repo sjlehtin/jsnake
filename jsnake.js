@@ -57,6 +57,15 @@ $(function() {
 			       this._square_side, this._square_side);
 	},
 
+	_occupied_by_snake: function (x, y) {
+	    for (var ii = 0; ii < this._snake.length; ii++) {
+		var joint = this._snake[ii];
+		if (joint.x == x && joint.y == y)
+		    return true;
+	    }
+	    return false;
+	},
+
 	_snake_still_legal: function () {
 	    if (this._x < 0)
 		return false;
@@ -65,6 +74,9 @@ $(function() {
 	    if (this._y < 0)
 		return false;
 	    if (this._y > this._board_height)
+		return false;
+
+	    if (this._occupied_by_snake(this._x, this._y))
 		return false;
 	    return true;
 	},
@@ -96,9 +108,9 @@ $(function() {
 		this._clear_square(last.x, last.y);
 	    }
 
-	    this._snake.unshift({x: this._x, y: this._y,
-				 direction: this._direction})
 	    if (this._snake_still_legal()) {	
+		this._snake.unshift({x: this._x, y: this._y,
+				     direction: this._direction})
 		this._draw_square(this._x, this._y);
 		return false;
 	    } else {
