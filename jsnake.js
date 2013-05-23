@@ -125,11 +125,11 @@ $(function() {
 	_snake_still_legal: function () {
 	    if (this._x < 0)
 		return false;
-	    if (this._x > this._board_width)
+	    if (this._x >= this._board_width)
 		return false;
 	    if (this._y < 0)
 		return false;
-	    if (this._y > this._board_height)
+	    if (this._y >= this._board_height)
 		return false;
 
 	    if (this._occupied_by_snake(this._x, this._y))
@@ -145,6 +145,7 @@ $(function() {
 	    }
 	},
 
+	// Return true if game over.
 	_move_snake: function () {
 	    switch (this._direction) {
 		case this.LEFT:
@@ -161,18 +162,18 @@ $(function() {
 		break;
 	    }
 
+	    if (!this._snake_still_legal()) {	
+		return true;
+	    }
+
 	    if (!this._snake_should_grow()) {
 		var last = this._snake.pop();
 		this._clear_square(last.x, last.y);
 	    }
 
-	    if (this._snake_still_legal()) {	
-		this._snake.unshift({ x: this._x, y: this._y })
-		this._draw_snake(this._x, this._y);
-		return false;
-	    } else {
-		return true;
-	    }
+	    this._snake.unshift({ x: this._x, y: this._y })
+	    this._draw_snake(this._x, this._y);
+	    return false;
 	},
 
 	update: function () {
@@ -182,7 +183,7 @@ $(function() {
 		setTimeout($.proxy(this.update, this), 
 			   this.options.update_interval);
 	    } else {
-		alert("dead meat.");
+		alert("dead meat: " + this._snake.length);
 	    }
 	}
     });
