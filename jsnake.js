@@ -1,8 +1,5 @@
 $(function() {
-    // the widget definition, where "custom" is the namespace,
-    // "colorize" the widget name
     $.widget("sjl.jsnake", {
-	// default options
 	options: {
 	    update_interval: 500
 	},
