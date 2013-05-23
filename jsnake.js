@@ -1,7 +1,11 @@
 $(function() {
     $.widget("sjl.jsnake", {
 	options: {
-	    update_interval: 500
+	    update_interval: 200,
+	    initial_food: 10,
+	    food_frequency: 0.05, // Interval from 0..1.
+	    food_color: { r: 0, g: 0, b: 200 },
+	    snake_color: { r: 200, g: 0, b: 0 }
 	},
 
 	// These double as character codes for the keypresses.
@@ -10,28 +14,49 @@ $(function() {
 	RIGHT: 39,
 	DOWN: 40,
 
+	_add_food: function () {
+	    var x = Math.floor(Math.random() * this._board_width);
+	    var y = Math.floor(Math.random() * this._board_height);
+
+	    console.log("adding food:", x, y);
+	    if (!this._occupied_by_snake(x, y)) {
+		this._draw_food(x, y);
+	    }
+	},
+
+	_maybe_add_food: function () {
+	    if (Math.random() < this.options.food_frequency) {
+		this._add_food();
+	    }
+	},
+
 	_create: function () {
 	    var ctx = this.element[0].getContext("2d");
 	    this._board_width = 50;
 	    this._board_height = 50;
+
+	    this._square_side = this.element.width()/this._board_width;
 	    
 	    this._x = Math.round(this._board_width/2);
 	    this._y = Math.round(this._board_height/2);
 
 	    this._valid_directions = [this.LEFT, this.RIGHT, 
-				     this.DOWN, this.UP];
+				      this.DOWN, this.UP];
 	    
 	    this._direction = this.RIGHT;
 	    
-	    this._snake = [{x: this._x, y: this._y,
-			    direction: this._direction}];
+	    this._snake = [{x: this._x, y: this._y}];
 
 	    if (ctx) {
 		this.element.css("border", "1px solid black");
 		setTimeout($.proxy(this.update, this), 
 			   this.options.update_interval);
-		this._square_side = this.element.width()/this._board_width;
-		this._ctx = ctx;
+		this._ctx = ctx;		
+
+		console.log("initial food: ", this.options.initial_food);
+		for (var ii = 0; ii < this.options.initial_food; ii++)
+		    this._add_food();
+
 		$(document).on('keydown', 
 				$.proxy(function (e) {
 				    if (this._valid_directions.indexOf(
@@ -51,13 +76,44 @@ $(function() {
 				this._square_side, this._square_side);
 	},
 
-	_draw_square: function (x, y) {
-	    this._ctx.fillStyle = "rgb(200, 0, 0)";
+	_draw_food: function (x, y) {
+	    this._draw_square(x, y, this.options.food_color);
+	},
+
+	_draw_snake: function (x, y) {
+	    this._draw_square(x, y, this.options.snake_color);
+	},
+
+	_draw_square: function (x, y, color) {
+	    this._ctx.fillStyle = "rgb(" + 
+			      color.r + "," + 
+			      color.g + "," + 
+			      color.b + ")";
 	    this._ctx.fillRect(x * this._square_side, y * this._square_side,
 			       this._square_side, this._square_side);
 	},
 
+	_get_square_color: function (x, y) {
+	    var data = 
+		this._ctx.getImageData(Math.floor((x + 0.5) * 
+						  this._square_side), 
+				       Math.floor((y + 0.5)* 
+						  this._square_side)
+				       , 1, 1).data;
+	    return { r: data[0], g: data[1], b: data[2] };
+	},
+
+	_color_equal: function (c1, c2) {
+	    return c1.r == c2.r && c1.g == c2.g && c1.b == c2.b;
+	},
+
+	_has_food: function (x, y) {
+	    return this._color_equal(this._get_square_color(x, y),
+				     this.options.food_color);
+	},
+
 	_occupied_by_snake: function (x, y) {
+	    // XXX better idea would be to check the color of the map.
 	    for (var ii = 0; ii < this._snake.length; ii++) {
 		var joint = this._snake[ii];
 		if (joint.x == x && joint.y == y)
@@ -81,10 +137,12 @@ $(function() {
 	    return true;
 	},
 	
-	_grow_counter: 0,
-
 	_snake_should_grow: function () {
-	    return this._grow_counter++ % 3;
+	    if (this._has_food(this._x, this._y)) {
+		return true;
+	    } else {
+		return false;
+	    }
 	},
 
 	_move_snake: function () {
@@ -109,9 +167,8 @@ $(function() {
 	    }
 
 	    if (this._snake_still_legal()) {	
-		this._snake.unshift({x: this._x, y: this._y,
-				     direction: this._direction})
-		this._draw_square(this._x, this._y);
+		this._snake.unshift({ x: this._x, y: this._y })
+		this._draw_snake(this._x, this._y);
 		return false;
 	    } else {
 		return true;
@@ -121,6 +178,7 @@ $(function() {
 	update: function () {
 	    var at_end = this._move_snake();
 	    if (!at_end) {
+		this._maybe_add_food();
 		setTimeout($.proxy(this.update, this), 
 			   this.options.update_interval);
 	    } else {
